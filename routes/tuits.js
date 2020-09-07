@@ -9,4 +9,7 @@ router.get('/', auth.ensureAuthenticated, Controller.get);
 router.delete('/', auth.ensureAuthenticated, Controller.delete);
 
 
+router.post('/like', auth.ensureAuthenticated, Controller.like);
+router.delete('/like', auth.ensureAuthenticated, Controller.unlike);
+
 module.exports = router;
