@@ -1,6 +1,7 @@
 const error_types   = require('./error_types');
 const Tuit          = require('../Models/tuit');
 const Like          = require('../Models/like');
+const Follow        = require('../Models/follow');
 
 let controller = {
     create: (req, res, next) => {
@@ -21,9 +22,29 @@ let controller = {
             .sort({created_at: 1})
             .then(data=>res.json(data));
     },
+    getAllUser: (req, res, next) => {
+        Tuit.find({user_id: req.param('id')})
+            .sort({created_at: 1})
+            .then(data=>{
+                res.json(data)
+            });
+    },
     get: (req, res, next) => {
         Tuit.find({_id:req.param('id')})
-            .then(data=>{res.json(data)})
+            .then(data=>{
+                Like.find({tuit_id: req.param('id')})
+                    .then(likes=>{
+                        Tuit.find({ref:req.param('id'), type: "rt"})
+                            .then(rts=>{
+                                let value = {
+                                    tuit: data,
+                                    likes: likes.length,
+                                    rts: rts.length
+                                }
+                                res.json(value);
+                            })
+                    })
+            })
             .catch(err=>{res.json(err)}) 
     },
     delete: (req, res, next) => {
@@ -52,6 +73,45 @@ let controller = {
                 res.json(data)
             })
             .catch(err=>{res.json(err)}) 
+    },
+    getLikes: (req, res, next) => {
+        Like.find({tuit_id: req.param('id')},{tuit_id: 1})
+            .then(data=>{
+                tuitsIDs = data.map(function (data) { return data.tuit_id; });
+                Tuit.find({
+                            '_id': { $in: tuitsIDs}})
+                    .sort({created_at: -1})
+                    .then(likes=>{
+                        res.json(likes);
+                    })
+                    .catch(err=>{res.json(err)});
+            });
+    },
+    getLikesUser: (req, res, next) => {
+        Like.find({user_id: req.param('id')},{tuit_id: 1})
+            .then(data=>{
+                tuitsIDs = data.map(function (data) { return data.tuit_id; });
+                Tuit.find({
+                            '_id': { $in: tuitsIDs}})
+                    .sort({created_at: -1})
+                    .then(likes=>{
+                        res.json(likes);
+                    })
+                    .catch(err=>{res.json(err)});
+            });
+    },
+    getTimeline: (req, res, next) => {
+        Follow.find({follow_id: req.user.sub, status: true})
+              .then(follows=>{
+                  console.log(follows);
+                  followsIDs = follows.map(function (follows) { return follows.user_id; });
+                  Tuit.find({'user_id': { $in: followsIDs}})
+                      .then(tuits=>{
+                          res.json(tuits)
+                      })
+                      .catch(err=>{res.json(err)});
+              })
+              .catch(err=>{res.json(err)});
     }
 }
 module.exports = controller;
