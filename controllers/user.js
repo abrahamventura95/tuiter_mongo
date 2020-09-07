@@ -1,5 +1,6 @@
 const User = require('../Models/user');
 const Follow = require('../Models/follow');
+const Block = require('../Models/block');
 const bcrypt = require('bcrypt');
 const passport  = require('passport');
 const jwt = require('jsonwebtoken');
@@ -139,6 +140,39 @@ let controller = {
     },
     deleteFollow: (req, res, next) => {
         Follow.deleteOne({_id:req.param('id'), user_id:req.user.sub})
+             .then(data=>{
+                res.json(data)
+             })
+             .catch(err=>{res.json(err)}) 
+    },
+    block: (req, res, next) => {
+        User.findOne({_id: req.body.block})
+            .then(data=>{ 
+                Block.findOne({user_id: req.user.sub, 
+                                block_id: req.body.block})
+                      .then(data=>{
+                          throw new 
+                                 error_types.InfoError("already blocked");
+                      })
+                      .catch(err=>{
+                        let document = new Block({
+                            user_id:     req.user.sub,
+                            block_id:   req.body.block
+                        });
+                        document.save()
+                                .then(data => res.json({data: data}))
+                                .catch(err => next(err));
+                      });
+            })
+            .catch(err=>{res.json(err)});
+    },
+    getBlocks: (req, res, next) => {
+        Block.find({user_id: req.user.sub})
+              .then(data=>res.json(data))
+              .catch(err=>res.json(err));
+    },
+    unBlock: (req, res, next) => {
+        Block.deleteOne({_id:req.param('id'), user_id:req.user.sub})
              .then(data=>{
                 res.json(data)
              })

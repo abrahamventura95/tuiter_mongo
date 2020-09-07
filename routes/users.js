@@ -15,5 +15,9 @@ router.get('/follow/', auth.ensureAuthenticated, UserController.getFollows);
 router.put('/follow/', auth.ensureAuthenticated, UserController.aceptedFollow);
 router.delete('/follow/', auth.ensureAuthenticated, UserController.deleteFollow);
 
+router.post('/block/', auth.ensureAuthenticated, UserController.block);
+router.get('/block/', auth.ensureAuthenticated, UserController.getBlocks);
+router.delete('/block/', auth.ensureAuthenticated, UserController.unBlock);
+
 
 module.exports = router;
