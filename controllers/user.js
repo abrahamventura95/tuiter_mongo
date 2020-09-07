@@ -1,4 +1,5 @@
 const User = require('../Models/user');
+const Follow = require('../Models/follow');
 const bcrypt = require('bcrypt');
 const passport  = require('passport');
 const jwt = require('jsonwebtoken');
@@ -86,6 +87,62 @@ let controller = {
                 res.json(data)
             })
             .catch(err=>{res.json(err)}) 
+    },
+    follow: (req, res, next) => {
+        User.findOne({_id: req.body.follow})
+            .then(data=>{ 
+                Follow.findOne({user_id: req.user.sub, 
+                                follow_id: req.body.follow})
+                      .then(data=>{
+                          throw new 
+                                 error_types.InfoError("request waiting");
+                      })
+                      .catch(err=>{
+                        if(data.privacity){
+                            let document = new Follow({
+                                user_id:     req.user.sub,
+                                follow_id:   req.body.follow,
+                                status:      true,
+                                acepted_at:  Date.now()
+                            });
+                            document.save()
+                                    .then(data => res.json({data: data}))
+                                    .catch(err => next(err));
+                        }else{
+                            let document = new Follow({
+                                user_id:     req.user.sub,
+                                follow_id:   req.body.follow
+                            });
+                            document.save()
+                                    .then(data => res.json({data: data}))
+                                    .catch(err => next(err));
+                        }  
+                      });
+            })
+            .catch(err=>{res.json(err)});
+    },
+    getFollows: (req, res, next) => {
+        Follow.find({user_id: req.user.sub})
+              .sort({status: -1})
+              .then(data=>res.json(data))
+              .catch(err=>res.json(err));
+    },
+    aceptedFollow: (req, res, next) => {
+        Follow.findOne({_id:req.param('id'), user_id:req.user.sub})
+              .then(data=>{
+                  data.status = req.body.status || false;
+                  if(data.status) data.acepted_at = Date.now();
+                  data.save();
+                  res.json(data);
+              })
+              .catch(err=>{res.json(err)}) 
+    },
+    deleteFollow: (req, res, next) => {
+        Follow.deleteOne({_id:req.param('id'), user_id:req.user.sub})
+             .then(data=>{
+                res.json(data)
+             })
+             .catch(err=>{res.json(err)}) 
     }
 }
 
